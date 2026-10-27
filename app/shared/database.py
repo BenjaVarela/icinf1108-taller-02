@@ -1,34 +1,26 @@
-import uuid
-from datetime import datetime
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Importación adaptada a la carpeta shared:
-from app.shared.database import Base 
+# Obtiene la URL de la base de datos desde el .env o usa la por defecto
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://postgres:postgres@localhost:5432/icinf_db"
+)
 
-class Student(Base):
-    __tablename__ = "students"
+# Motor de conexión a PostgreSQL
+engine = create_engine(DATABASE_URL)
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = Column(String(100), nullable=False)
-    username = Column(String(30), unique=True, nullable=False, index=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    age = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+# Fábrica de sesiones de base de datos
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-    pets = relationship("Pet", back_populates="student", cascade="all, delete-orphan")
+# Clase base declarativa para los modelos ORM
+Base = declarative_base()
 
-
-class Pet(Base):
-    __tablename__ = "pets"
-
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    student_id = Column(String(36), ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(50), nullable=False)
-    species = Column(String(50), nullable=False)
-    age = Column(Integer, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    student = relationship("Student", back_populates="pets")
+# Dependencia para inyectar la sesión en los endpoints de FastAPI
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
