@@ -98,7 +98,10 @@ dependencies = [
     { name = "email-validator" },
     { name = "fastapi" },
     { name = "psycopg2-binary" },
+<<<<<<< HEAD
+=======
     { name = "python-dotenv" },
+>>>>>>> main
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -114,7 +117,10 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.2.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.13" },
+<<<<<<< HEAD
+=======
     { name = "python-dotenv", specifier = ">=1.2.3" },
+>>>>>>> main
     { name = "sqlalchemy", specifier = ">=2.1.6" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30.0" },
 ]
@@ -186,6 +192,8 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
+=======
 name = "mako"
 version = "1.4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -296,6 +304,7 @@ wheels = [
 ]
 
 [[package]]
+>>>>>>> main
 name = "psycopg2-binary"
 version = "2.9.13"
 source = { registry = "https://pypi.org/simple" }

@@ -1,40 +1,53 @@
-from fastapi import APIRouter
+import uuid
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.pets.pets_service import pets_service
-from app.students.students_schemas import (
-    CreateStudentDto,
-    Student,
-    StudentList,
-    UpdateStudentDto,
-)
-from app.students.students_service import students_service
+from app.shared.database import get_db
+from app.models import Student
 
-router = APIRouter(prefix="/api/students", tags=["Students"])
+router = APIRouter(prefix="/students", tags=["Students"])
 
+@router.get("/")
+def get_all_students(db: Session = Depends(get_db)):
+    return db.query(Student).all()
 
-@router.get("")
-def find_all() -> StudentList:
-    return students_service.find_all()
+@router.get("/{student_id}")
+def get_student_by_id(student_id: str, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+    return student
 
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_student(student_in: dict, db: Session = Depends(get_db)):
+    try:
+        new_student = Student(
+            id=str(uuid.uuid4()),
+            username=student_in["username"],
+            email=student_in["email"],
+            name=student_in["name"],
+            age=student_in["age"],
+            created_at=datetime.utcnow()
+        )
+        db.add(new_student)
+        db.commit()
+        db.refresh(new_student)
+        return new_student
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error creando estudiante: {str(e)}")
 
-@router.get("/{studentId}")
-def find_by_id(studentId: str) -> Student:
-    return students_service.find_by_id(studentId)
-
-
-@router.post("", status_code=201)
-def create(body: CreateStudentDto) -> Student:
-    return students_service.create(body)
-
-
-@router.patch("/{studentId}")
-def update(studentId: str, body: UpdateStudentDto) -> Student:
-    return students_service.update(studentId, body)
-
-
-@router.delete("/{studentId}")
-def delete(studentId: str) -> Student:
-    deleted = students_service.delete(studentId)
-    pets_service.delete_all_for_student(studentId)
-
-    return deleted
+@router.delete("/{student_id}")
+def delete_student(student_id: str, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+    try:
+        db.delete(student)
+        db.commit()
+        return {"message": "Estudiante eliminado exitosamente"}
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error en la transacción al eliminar")
