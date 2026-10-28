@@ -1,23 +1,23 @@
 import os
 from logging.config import fileConfig
-
+from sqlalchemy import engine_from_config, pool
 from alembic import context
 from dotenv import load_dotenv
-from sqlalchemy import engine_from_config, pool
 
-from app.models import Pet, Student
 from app.shared.database import Base
+from app.models import Student, Pet
 
 load_dotenv()
 
 config = context.config
-config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"].replace("%", "%%"))
+
+database_url = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/icinf_db")
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-
 
 def run_migrations_offline() -> None:
     context.configure(
@@ -29,7 +29,6 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
 def run_migrations_online() -> None:
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
@@ -40,7 +39,6 @@ def run_migrations_online() -> None:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
